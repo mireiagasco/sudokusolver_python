@@ -140,7 +140,6 @@ class CSP:
         # Run AC-3 on all constraints in the CSP, to weed out all of the
         # values that are not arc-consistent to begin with
         self.inference(assignment, self.get_all_arcs())
-
         # Call backtrack with the partial assignment 'assignment'
         return self.backtrack(assignment)
 
@@ -168,6 +167,7 @@ class CSP:
         assignments and inferences that took place in previous
         iterations of the loop.
         """
+
         unassigned_var = self.select_unassigned_variable(assignment)
         if unassigned_var is None:
             return assignment
@@ -180,7 +180,6 @@ class CSP:
             inferences = self.inference(new_assignment, self.get_all_arcs())
             if inferences:
                 # If inference was successful, update the assignment and proceed
-                new_assignment.update(inferences)
                 result = self.backtrack(new_assignment)
                 if result is not None:
                     return result  # Return the result if it's a valid solution
@@ -211,13 +210,14 @@ class CSP:
             for constraint in queue:
                 i = constraint[0]
                 j = constraint[1]
+                queue.pop()
                 if self.revise(assignment, i, j):
                     if len(assignment.get(i)) == 0:
                         return False
                     neighbors = self.get_all_neighboring_arcs(i)
                     for neighbor in neighbors:
-                        if neighbor != constraint:
-                            queue.append((neighbor, i))
+                        if neighbor != [j, i]:
+                            queue.append(neighbor)
         return True
 
     def revise(self, assignment, i, j):
@@ -233,10 +233,10 @@ class CSP:
         i_values = assignment.get(i)
 
         if i_values is not None:
-            satisfied = False
             for value in i_values:
-                for value2 in assignment.get(j, []):
-                    if value != value2:
+                for value2 in assignment.get(j):
+                    satisfied = False
+                    if (value, value2) in self.constraints[i][j]:
                         satisfied = True
                         break
                 if not satisfied:
